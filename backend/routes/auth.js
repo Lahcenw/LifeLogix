@@ -5,7 +5,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const jwtSecret = 'your_jwt_secret'; // replace with a strong, secret key
+const jwtSecret = 'my_jwt_secret_token'; 
 
 // @route   POST /api/auth/register
 // @desc    Register a new user

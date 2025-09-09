@@ -1,4 +1,4 @@
-// server.js
+const entries = require('./routes/entries');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors'); //added later to allow the flow of requests between localhost5000(backend) and localhost3000 (frontend)
@@ -19,6 +19,7 @@ app.use(cors());
 
 // Use the authentication routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/entries', entries);
 // Basic test route
 app.get('/', (req, res) => {
     res.send('Welcome to the LifeLogix Backend!');
