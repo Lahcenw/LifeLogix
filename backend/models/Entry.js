@@ -1,4 +1,4 @@
-
+//This is the structure of the journal entries in the database
 const mongoose = require('mongoose');
 
 const EntrySchema = new mongoose.Schema({

@@ -29,6 +29,7 @@ router.post('/', auth, async (req, res) => {
 // @access  Private
 router.get('/', auth, async (req, res) => {
     try {
+        console.log("Authenticated user ID:", req.user.id);
         const entries = await Entry.find({ user: req.user.id }).sort({ date: -1 });
         res.json(entries);
     } catch (err) {

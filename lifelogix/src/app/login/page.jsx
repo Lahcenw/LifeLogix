@@ -22,6 +22,7 @@ export default function Login() {
 
     if (res.ok) {
       // Login successful!
+      localStorage.setItem('token', data.token);
       setMessage("Login Successful!");
       console.log('Received token:', data.token);
     } else {
