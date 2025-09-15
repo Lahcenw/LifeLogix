@@ -19,7 +19,8 @@ app.use(cors());
 
 // Use the authentication routes
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/entries', entries);
+app.use('/api/entries', entries); //already required before
+app.use('/api/activities', require('./routes/activities'));
 // Basic test route
 app.get('/', (req, res) => {
     res.send('Welcome to the LifeLogix Backend!');

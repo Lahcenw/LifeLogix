@@ -50,7 +50,7 @@ router.post('/login', async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({msg: 'Invalid Credentials'});
         }
-        //Create and send a JWT
+        //create and send a JWT
         const payload = {user: {id: user.id}};
         jwt.sign(payload, jwtSecret, { expiresIn: '1h' }, (err, token) => {
             if (err) throw err;

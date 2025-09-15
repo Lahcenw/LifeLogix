@@ -9,6 +9,9 @@ export default function Dashboard() {
     const [message, setMessage] = useState('');
     const [newTitle, setNewTitle] = useState('');
     const [newText, setNewText] = useState('');
+    const [editingEntryId, setEditingEntryId] = useState(null);
+    const [editingTitle, setEditingTitle] = useState('');
+    const [editingText, setEditingText] = useState('');
     const router = useRouter();
 
 
@@ -77,6 +80,64 @@ export default function Dashboard() {
         }
     };
 
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`http://localhost:5000/api/entries/${editingEntryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token,
+                },
+                body: JSON.stringify({ title: editingTitle, text: editingText }),
+            });
+
+            if (res.ok) {
+                const updatedEntry = await res.json();
+                setEntries(entries.map(entry =>
+                    entry._id === updatedEntry._id ? updatedEntry : entry
+                ));
+                setEditingEntryId(null);
+                setEditingTitle('');
+                setEditingText('');
+                setMessage("Entry updated successfully!");
+            } else {
+                setMessage("Failed to update entry.");
+            }
+        } catch (err) {
+            setMessage("Server error. Please try again later.");
+        }
+    };
+
+    const handleDelete = async (id) => {
+
+        const confirmed = window.confirm("Are you sure you want to delete this journal entry?");
+
+        if (!confirmed) {
+            return;
+        }
+
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`http://localhost:5000/api/entries/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'x-auth-token': token,
+                },
+            });
+
+            if (res.ok) {
+            setEntries(entries.filter(entry => entry._id !== id));
+            setMessage("Entry deleted successfully!");
+            } else {
+            setMessage("Failed to delete entry.");
+            }
+        } catch (err) {
+            setMessage("Server error. Please try again later.");
+        }
+    };
+
     return (
         <div style={{ padding: '20px' }}>
             <h1>My Journal</h1>
@@ -104,14 +165,46 @@ export default function Dashboard() {
             ) : (
                 <ul>
                     {entries.map((entry) => (
-                        <li key={entry._id}>
-                            <h3>{entry.title}</h3>
-                            <p>{entry.text}</p>
-                            <small>{new Date(entry.date).toLocaleDateString()}</small>
-                        </li>
+                    <li key={entry._id}>
+                        {editingEntryId === entry._id ? (
+                            // Edit Form
+                            <form onSubmit={handleUpdate}>
+                                <input
+                                    type="text"
+                                    value={editingTitle}
+                                    onChange={(e) => setEditingTitle(e.target.value)}
+                                    required
+                                />
+                                <textarea
+                                    value={editingText}
+                                    onChange={(e) => setEditingText(e.target.value)}
+                                    required
+                                ></textarea>
+                                <button type="submit">Save</button>
+                                <button onClick={() => setEditingEntryId(null)}>Cancel</button>
+                            </form>
+                        ) : (
+                            // Display Mode
+                            <div>
+                                <h3>{entry.title}</h3>
+                                <p>{entry.text}</p>
+                                <small>{new Date(entry.date).toLocaleDateString()}</small>
+                                <div style={{ marginTop: '10px' }}>
+                                    <button onClick={() => {
+                                        setEditingEntryId(entry._id);
+                                        setEditingTitle(entry.title);
+                                        setEditingText(entry.text);
+                                    }}> Edit </button>
+                                    <button onClick={() => handleDelete(entry._id)}>
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </li>
                     ))}
                 </ul>
             )}
         </div>
     );
-}
+};
