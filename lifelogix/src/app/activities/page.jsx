@@ -6,28 +6,60 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function ActivitiesTracker() {
+    // --- State variables to manage all the UI and data.
+    // 'activities' holds all the logged data from the server.
     const [activities, setActivities] = useState([]);
+    // 'message' is for showing quick feedback like "Activity saved!".
     const [message, setMessage] = useState('');
+    // 'currentActivity' tracks the activity being timed right now.
     const [currentActivity, setCurrentActivity] = useState(null);
+    // 'timer' is just a simple second counter for the active activity.
     const [timer, setTimer] = useState(0);
+    // 'isActive' is a boolean to control the timer.
     const [isActive, setIsActive] = useState(false);
+    
+    // 'pausedActivities' is where we store activities that were started but not saved yet.
     const [pausedActivities, setPausedActivities] = useState([]);
+
+    // States for the manual entry form.
     const [manualName, setManualName] = useState('');
     const [manualDuration, setManualDuration] = useState('');
     const [manualQuality, setManualQuality] = useState('');
     const [manualDetails, setManualDetails] = useState('');
+
+    // States for the pop-up to save a completed activity.
     const [showPopup, setShowPopup] = useState(false);
     const [popupQuality, setPopupQuality] = useState('');
     const [popupDetails, setPopupDetails] = useState('');
     const [popupData, setPopupData] = useState(null);
+
+    // States for managing the pre-defined quick activities list.
+    const [predefinedActivities, setPredefinedActivities] = useState(['Work', 'Study', 'Gym', 'Reading']);
+    const [newActivityName, setNewActivityName] = useState('');
+
+    // States for the delete confirmation pop-up.
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [activityToDelete, setActivityToDelete] = useState(null);
+
+    // Get the Next.js router for navigation.
     const router = useRouter();
+    // useRef to keep the timer's interval ID across renders.
     const intervalRef = useRef(null);
 
+    // --- Utility Function: Format the timer into MM:SS.
+    const formatTime = (timeInSeconds) => {
+        const minutes = Math.floor(timeInSeconds / 60);
+        const seconds = timeInSeconds % 60;
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    // --- useEffect: Fetch logged activities on component load.
+    // It also redirects to login if there's no token.
     useEffect(() => {
         const fetchActivities = async () => {
             const token = localStorage.getItem('token');
             if (!token) {
-                router.push('/login'); //redirection to login page
+                router.push('/login');
                 return;
             }
             try {
@@ -53,6 +85,7 @@ export default function ActivitiesTracker() {
         fetchActivities();
     }, [router]);
 
+    // --- useEffect: Handle the timer logic and prevent data loss on page reload.
     useEffect(() => {
         if (isActive) {
             intervalRef.current = setInterval(() => {
@@ -77,12 +110,9 @@ export default function ActivitiesTracker() {
         };
     }, [isActive, timer]);
 
-    const formatTime = (timeInSeconds) => {
-        const minutes = Math.floor(timeInSeconds / 60);
-        const seconds = timeInSeconds % 60;
-        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    };
+    // --- Core Functions for handling data.
 
+    // Function to send a new activity to the server.
     const saveActivity = async (name, duration, quality, details) => {
         const token = localStorage.getItem('token');
         if (!name || duration === 0) return;
@@ -113,36 +143,55 @@ export default function ActivitiesTracker() {
         }
     };
     
-    const handleDeleteActivity = async (id) => {
-        const token = localStorage.getItem('token');
-        if (!window.confirm('Are you sure you want to delete this activity?')) {
-            return;
-        }
-        try {
-            const res = await fetch(`http://localhost:5000/api/activities/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'x-auth-token': token,
-                },
-            });
+    // Function to trigger the delete confirmation pop-up.
+    const handleDeleteActivity = (id) => {
+        setActivityToDelete(id);
+        setShowDeleteConfirm(true);
+    };
 
-            if (res.ok) {
-                setActivities(activities.filter(activity => activity._id !== id));
-                setMessage('Activity successfully deleted!');
-            } else {
-                setMessage('Failed to delete activity.');
+    // Function to actually delete an activity from the database.
+    const confirmDelete = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            // Check if the item to delete is a logged activity (by _id)
+            if (activityToDelete.length === 24) { // MongoDB ObjectId has a length of 24
+                const res = await fetch(`http://localhost:5000/api/activities/${activityToDelete}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'x-auth-token': token,
+                    },
+                });
+                if (res.ok) {
+                    setActivities(activities.filter(activity => activity._id !== activityToDelete));
+                    setMessage('Activity successfully deleted!');
+                } else {
+                    setMessage('Failed to delete activity.');
+                }
+            } else { // Otherwise, it's a predefined activity name
+                setPredefinedActivities(prev => prev.filter(name => name !== activityToDelete));
+                setMessage(`'${activityToDelete}' successfully removed from quick activities!`);
             }
         } catch (err) {
             setMessage('Server error. Please try again.');
+        } finally {
+            setShowDeleteConfirm(false);
+            setActivityToDelete(null);
         }
     };
 
+    // Function to cancel the delete operation.
+    const cancelDelete = () => {
+        setShowDeleteConfirm(false);
+        setActivityToDelete(null);
+    };
+
+    // Handle a user clicking 'Save' on a pending activity.
     const handleSavePending = (activityToSave) => {
         setPopupData(activityToSave);
         setShowPopup(true);
-        // This will now only show the pop-up and not interfere with a running timer
     };
 
+    // Pause the currently active timer and add it to the pending list.
     const handlePause = (name, duration) => {
         if (name && duration > 0) {
             setPausedActivities(prev => [...prev, { name, duration }]);
@@ -153,6 +202,7 @@ export default function ActivitiesTracker() {
         setIsActive(false);
     };
 
+    // Start or resume a quick activity timer.
     const handleStartPause = (activityName) => {
         if (isActive && currentActivity !== activityName) {
             handlePause(currentActivity, timer);
@@ -177,24 +227,24 @@ export default function ActivitiesTracker() {
         }
     };
 
+    // Stop the active timer and show the pop-up to finalize the activity details.
     const handleFinish = () => {
         setPopupData({ name: currentActivity, duration: timer });
         setIsActive(false); 
         setShowPopup(true);
     };
 
+    // Handle the form submission inside the save pop-up.
     const handlePopupSubmit = (e) => {
         e.preventDefault();
         
         const { name, duration } = popupData;
         saveActivity(name, duration, parseInt(popupQuality, 10), popupDetails);
         
-        // After saving, clean up the pop-up's state and main timer if it was the active one
         if (name === currentActivity) {
             setCurrentActivity(null);
             setTimer(0);
         } else {
-            // Remove the saved activity from the pending list
             setPausedActivities(prev => prev.filter(act => act.name !== name));
         }
         
@@ -204,8 +254,8 @@ export default function ActivitiesTracker() {
         setPopupData(null);
     };
 
+    // Close the save pop-up without logging the activity.
     const handleCancelPopup = () => {
-        // If the activity was active, put it back into the paused state
         if (popupData.name === currentActivity) {
             handlePause(currentActivity, timer);
         }
@@ -216,6 +266,7 @@ export default function ActivitiesTracker() {
         setPopupData(null);
     };
 
+    // Handle the submission for the manual entry form.
     const handleManualSubmit = async (e) => {
         e.preventDefault();
         const token = localStorage.getItem('token');
@@ -251,45 +302,81 @@ export default function ActivitiesTracker() {
             setMessage("Server error. Please try again later.");
         }
     };
+    
+    // Allow users to add new quick activity buttons.
+    const handleAddActivity = (e) => {
+        e.preventDefault();
+        if (newActivityName && !predefinedActivities.includes(newActivityName)) {
+            setPredefinedActivities(prev => [...prev, newActivityName]);
+            setNewActivityName('');
+        }
+    };
 
-    const predefinedActivities = ['Work', 'Study', 'Gym', 'Reading'];
+    // Allow users to remove quick activity buttons.
+    const handleDeletePredefinedActivity = (activityToDeleteName) => {
+        setActivityToDelete(activityToDeleteName); // Set the name as the item to delete
+        setShowDeleteConfirm(true); // Show the confirmation popup
+    };
 
+    // --- The JSX for the component's UI.
     return (
-        <div style={{ padding: '20px' }}>
-            <h1>Daily Activities Tracker</h1>
-            {message && <p style={{ color: 'red' }}>{message}</p>}
+        <div className="p-5">
+            <h1 className="text-3xl font-bold mb-4">Daily Activities Tracker</h1>
+            {message && <p className="text-red-500 mb-4">{message}</p>}
 
-            <div style={{ marginBottom: '30px' }}>
-                <h2>Quick Tracker</h2>
-                <div style={{ display: 'flex', gap: '10px' }}>
+            {/* Quick Tracker section with buttons and delete functionality */}
+            <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-2">Quick Tracker</h2>
+                <div className="flex flex-wrap gap-2">
                     {predefinedActivities.map(name => (
-                        <button
-                            key={name}
-                            onClick={() => handleStartPause(name)}
-                            style={{
-                                padding: '10px 20px',
-                                border: '1px solid #ccc',
-                                borderRadius: '5px',
-                                backgroundColor: currentActivity === name ? '#d4edda' : '#f0f0f0'
-                            }}
-                        >
-                            {name}
-                        </button>
+                        <div key={name} className="flex items-center gap-1">
+                            <button
+                                onClick={() => handleStartPause(name)}
+                                className={`py-2 px-4 border border-gray-300 rounded-md text-black ${currentActivity === name ? 'bg-green-200' : 'bg-gray-200'}`}
+                            >
+                                {name}
+                            </button>
+                            <button
+                                onClick={() => handleDeletePredefinedActivity(name)}
+                                className="bg-transparent border-none cursor-pointer text-red-500"
+                            >
+                                &times;
+                            </button>
+                        </div>
                     ))}
                 </div>
-                {isActive && (
-                    <div style={{ marginTop: '20px', fontSize: '24px', fontWeight: 'bold' }}>
-                        <p>Tracking: {currentActivity} - {formatTime(timer)}</p>
-                        <button onClick={handleFinish} style={{ marginTop: '10px' }}>Finish & Save</button>
-                    </div>
-                )}
             </div>
 
+            {/* Form to add or remove quick activities */}
+            <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-2">Manage Quick Activities</h2>
+                <form onSubmit={handleAddActivity} className="flex gap-2">
+                    <input
+                        type="text"
+                        placeholder="Add new activity"
+                        value={newActivityName}
+                        onChange={(e) => setNewActivityName(e.target.value)}
+                        required
+                        className="p-2 border border-gray-300 rounded-md flex-grow"
+                    />
+                    <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded-md">Add</button>
+                </form>
+            </div>
+
+            {/* Display for the current active timer */}
+            {isActive && (
+                <div className="mt-5 text-2xl font-bold">
+                    <p>Tracking: {currentActivity} - {formatTime(timer)}</p>
+                    <button onClick={handleFinish} className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-md">Finish & Save</button>
+                </div>
+            )}
+
+            // Pop-up for finalizing an activity
             {showPopup && popupData && (
-                <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'white', padding: '20px', border: '1px solid #ccc', zIndex: '100' }}>
-                    <h3>Finalize {popupData.name}</h3>
-                    <form onSubmit={handlePopupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <label>
+                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-5 border border-gray-300 rounded-lg z-50 text-black">
+                    <h3 className="text-lg font-semibold mb-4 text-black">Finalize {popupData.name}</h3>
+                    <form onSubmit={handlePopupSubmit} className="flex flex-col gap-4">
+                        <label className="text-black">
                             Quality (1-5):
                             <input
                                 type="number"
@@ -298,48 +385,69 @@ export default function ActivitiesTracker() {
                                 min="1"
                                 max="5"
                                 required
+                                className="mt-1 p-2 border border-gray-300 rounded-md w-full text-black"
                             />
                         </label>
-                        <label>
+                        <label className="text-black">
                             Details:
                             <textarea
                                 value={popupDetails}
                                 onChange={(e) => setPopupDetails(e.target.value)}
                                 required
+                                className="mt-1 p-2 border border-gray-300 rounded-md w-full text-black"
                             ></textarea>
                         </label>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <button type="submit">Save Log</button>
-                            <button type="button" onClick={handleCancelPopup}>Cancel</button>
+                        <div className="flex gap-2">
+                            <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded-md">Save Log</button>
+                            <button type="button" onClick={handleCancelPopup} className="bg-gray-300 text-black py-2 px-4 rounded-md">Cancel</button>
                         </div>
                     </form>
                 </div>
             )}
 
+            {/* Pop-up for confirming deletion */}
+            {showDeleteConfirm && (
+                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-5 border border-gray-300 rounded-lg z-50 text-black">
+                    <h3 className="text-lg font-semibold mb-4 text-black">Confirm Deletion</h3>
+                    <p className="mb-4 text-black">Are you sure you want to delete this activity?</p>
+                    <div className="flex gap-2">
+                        <button onClick={confirmDelete} className="bg-red-500 text-white border-none py-2 px-4 rounded-md cursor-pointer">
+                            Delete
+                        </button>
+                        <button onClick={cancelDelete} className="bg-gray-300 text-black border-none py-2 px-4 rounded-md cursor-pointer">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* List of pending activities to resume or save */}
             {pausedActivities.length > 0 && (
-                <div style={{ marginBottom: '30px' }}>
-                    <h2>Pending Activities</h2>
+                <div className="mb-8">
+                    <h2 className="text-xl font-semibold mb-2">Pending Activities</h2>
                     <ul>
                         {pausedActivities.map((act, index) => (
-                            <li key={index} style={{ marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <li key={index} className="mb-2 flex items-center gap-2">
                                 <span>{act.name} - {formatTime(act.duration)}</span>
-                                <button onClick={() => handleStartPause(act.name)}>Resume</button>
-                                <button onClick={() => handleSavePending(act)}>Save</button>
+                                <button onClick={() => handleStartPause(act.name)} className="bg-green-500 text-white py-1 px-3 rounded-md">Resume</button>
+                                <button onClick={() => handleSavePending(act)} className="bg-blue-500 text-white py-1 px-3 rounded-md">Save</button>
                             </li>
                         ))}
                     </ul>
                 </div>
             )}
 
-            <div style={{ marginBottom: '30px' }}>
-                <h2>Manual Entry</h2>
-                <form onSubmit={handleManualSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Form for manual activity entry */}
+            <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-2">Manual Entry</h2>
+                <form onSubmit={handleManualSubmit} className="flex flex-col gap-4">
                     <input
                         type="text"
                         placeholder="Activity Name"
                         value={manualName}
                         onChange={(e) => setManualName(e.target.value)}
                         required
+                        className="p-2 border border-gray-300 rounded-md"
                     />
                     <input
                         type="number"
@@ -347,6 +455,7 @@ export default function ActivitiesTracker() {
                         value={manualDuration}
                         onChange={(e) => setManualDuration(e.target.value)}
                         required
+                        className="p-2 border border-gray-300 rounded-md"
                     />
                     <input
                         type="number"
@@ -355,30 +464,33 @@ export default function ActivitiesTracker() {
                         onChange={(e) => setManualQuality(e.target.value)}
                         min="1"
                         max="5"
+                        className="p-2 border border-gray-300 rounded-md"
                     />
                     <textarea
                         placeholder="Details..."
                         value={manualDetails}
                         onChange={(e) => setManualDetails(e.target.value)}
+                        className="p-2 border border-gray-300 rounded-md"
                     ></textarea>
-                    <button type="submit">Log Activity</button>
+                    <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded-md">Log Activity</button>
                 </form>
             </div>
 
+            {/* Display list of all logged activities */}
             <div>
-                <h2>Logged Activities</h2>
+                <h2 className="text-xl font-semibold mb-2">Logged Activities</h2>
                 {activities.length === 0 ? (
-                    <p>No activities logged yet.</p>
+                    <p className="text-gray-500">No activities logged yet.</p>
                 ) : (
                     <ul>
                         {activities.map((act) => (
-                            <li key={act._id} style={{ marginBottom: '10px', border: '1px solid #eee', padding: '10px' }}>
-                                <h3>{act.activityName}</h3>
-                                <p>Duration: **{act.duration} minutes**</p>
-                                {act.quality && <p>Quality: {act.quality}/5</p>}
-                                {act.details && <p>Details: {act.details}</p>}
-                                <small>Logged on: {new Date(act.date).toLocaleDateString()}</small>
-                                <button onClick={() => handleDeleteActivity(act._id)} style={{ marginLeft: '10px', color: 'red', border: '1px solid red', background: 'none' }}>
+                            <li key={act._id} className="mb-4 p-4 border border-gray-200 rounded-md">
+                                <h3 className="text-lg font-semibold">{act.activityName}</h3>
+                                <p className="text-sm">Duration: <strong className="font-bold">{act.duration} minutes</strong></p>
+                                {act.quality && <p className="text-sm">Quality: {act.quality}/5</p>}
+                                {act.details && <p className="text-sm">Details: {act.details}</p>}
+                                <small className="text-xs text-gray-500">Logged on: {new Date(act.date).toLocaleDateString()}</small>
+                                <button onClick={() => handleDeleteActivity(act._id)} className="ml-2 text-red-500 border border-red-500 bg-transparent rounded-md py-1 px-2">
                                     Delete
                                 </button>
                             </li>
