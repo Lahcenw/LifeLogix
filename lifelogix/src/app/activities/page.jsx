@@ -320,184 +320,231 @@ export default function ActivitiesTracker() {
 
     // --- The JSX for the component's UI.
     return (
-        <div className="p-5">
-            <h1 className="text-3xl font-bold mb-4">Daily Activities Tracker</h1>
-            {message && <p className="text-red-500 mb-4">{message}</p>}
+        <div className="flex flex-col md:flex-row md:space-x-8 p-4 md:p-8 w-full bg-gray-50 min-h-screen">
+            
+            {/* Main Content Area */}
+            <div className="w-full md:w-2/3">
+                <h1 className="text-4xl font-bold mb-8 text-gray-800 text-center md:text-left">Activities Tracker</h1>
+                {message && (
+                    <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-md mb-6" role="alert">
+                        <span className="block sm:inline">{message}</span>
+                    </div>
+                )}
 
-            {/* Quick Tracker section with buttons and delete functionality */}
-            <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-2">Quick Tracker</h2>
-                <div className="flex flex-wrap gap-2">
-                    {predefinedActivities.map(name => (
-                        <div key={name} className="flex items-center gap-1">
-                            <button
-                                onClick={() => handleStartPause(name)}
-                                className={`py-2 px-4 border border-gray-300 rounded-md text-black ${currentActivity === name ? 'bg-green-200' : 'bg-gray-200'}`}
-                            >
-                                {name}
-                            </button>
-                            <button
-                                onClick={() => handleDeletePredefinedActivity(name)}
-                                className="bg-transparent border-none cursor-pointer text-red-500"
-                            >
-                                &times;
-                            </button>
+                {/* Quick Tracker Section */}
+                <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+                    <h2 className="text-2xl font-semibold mb-4 text-gray-700">Quick Tracker</h2>
+                    {isActive && (
+                        <div className="mb-4 p-4 rounded-lg bg-indigo-100 border border-indigo-200">
+                            <p className="text-lg font-bold text-indigo-800">
+                                Tracking: <span className="font-extrabold">{currentActivity}</span>
+                            </p>
+                            <p className="text-3xl font-extrabold text-indigo-800">{formatTime(timer)}</p>
+                            <div className="flex space-x-2 mt-4">
+                                <button 
+                                    onClick={handleFinish} 
+                                    className="flex-1 py-2 px-4 rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                >
+                                    Finish & Save
+                                </button>
+                                <button 
+                                    onClick={() => handlePause(currentActivity, timer)} 
+                                    className="flex-1 py-2 px-4 rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                >
+                                    Pause
+                                </button>
+                            </div>
                         </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Form to add or remove quick activities */}
-            <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-2">Manage Quick Activities</h2>
-                <form onSubmit={handleAddActivity} className="flex gap-2">
-                    <input
-                        type="text"
-                        placeholder="Add new activity"
-                        value={newActivityName}
-                        onChange={(e) => setNewActivityName(e.target.value)}
-                        required
-                        className="p-2 border border-gray-300 rounded-md flex-grow"
-                    />
-                    <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded-md">Add</button>
-                </form>
-            </div>
-
-            {/* Display for the current active timer */}
-            {isActive && (
-                <div className="mt-5 text-2xl font-bold">
-                    <p>Tracking: {currentActivity} - {formatTime(timer)}</p>
-                    <button onClick={handleFinish} className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-md">Finish & Save</button>
-                </div>
-            )}
-
-            // Pop-up for finalizing an activity
-            {showPopup && popupData && (
-                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-5 border border-gray-300 rounded-lg z-50 text-black">
-                    <h3 className="text-lg font-semibold mb-4 text-black">Finalize {popupData.name}</h3>
-                    <form onSubmit={handlePopupSubmit} className="flex flex-col gap-4">
-                        <label className="text-black">
-                            Quality (1-5):
-                            <input
-                                type="number"
-                                value={popupQuality}
-                                onChange={(e) => setPopupQuality(e.target.value)}
-                                min="1"
-                                max="5"
-                                required
-                                className="mt-1 p-2 border border-gray-300 rounded-md w-full text-black"
-                            />
-                        </label>
-                        <label className="text-black">
-                            Details:
-                            <textarea
-                                value={popupDetails}
-                                onChange={(e) => setPopupDetails(e.target.value)}
-                                required
-                                className="mt-1 p-2 border border-gray-300 rounded-md w-full text-black"
-                            ></textarea>
-                        </label>
-                        <div className="flex gap-2">
-                            <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded-md">Save Log</button>
-                            <button type="button" onClick={handleCancelPopup} className="bg-gray-300 text-black py-2 px-4 rounded-md">Cancel</button>
-                        </div>
+                    )}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {predefinedActivities.map(name => (
+                            <div key={name} className="flex items-center">
+                                <button
+                                    onClick={() => handleStartPause(name)}
+                                    className={`py-2 px-4 border border-gray-300 rounded-md text-sm shadow-sm ${currentActivity === name ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
+                                >
+                                    {name}
+                                </button>
+                                <button
+                                    onClick={() => handleDeletePredefinedActivity(name)}
+                                    className="p-1 text-red-500 hover:text-red-700 transition-colors duration-200"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <form onSubmit={handleAddActivity} className="flex gap-2">
+                        <input
+                            type="text"
+                            placeholder="Add new activity"
+                            value={newActivityName}
+                            onChange={(e) => setNewActivityName(e.target.value)}
+                            required
+                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                        />
+                        <button type="submit" className="flex-shrink-0 bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Add
+                        </button>
                     </form>
+                </div>
+
+                {/* Pending Activities Section */}
+                {pausedActivities.length > 0 && (
+                    <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+                        <h2 className="text-2xl font-semibold mb-4 text-gray-700">Pending Activities</h2>
+                        <ul className="space-y-4">
+                            {pausedActivities.map((act, index) => (
+                                <li key={index} className="p-4 bg-gray-100 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                                    <div className="flex-1">
+                                        <h4 className="text-lg font-medium">{act.name}</h4>
+                                        <p className="text-sm text-gray-600">{formatTime(act.duration)}</p>
+                                    </div>
+                                    <div className="flex space-x-2 mt-2 sm:mt-0">
+                                        <button onClick={() => handleStartPause(act.name)} className="bg-green-500 text-white py-2 px-4 rounded-md shadow-sm hover:bg-green-600">Resume</button>
+                                        <button onClick={() => handleSavePending(act)} className="bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700">Save</button>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                
+                {/* Manual Entry Form Section */}
+                <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+                    <h2 className="text-2xl font-semibold mb-4 text-gray-700">Manual Entry</h2>
+                    <form onSubmit={handleManualSubmit} className="flex flex-col space-y-4">
+                        <input
+                            type="text"
+                            placeholder="Activity Name"
+                            value={manualName}
+                            onChange={(e) => setManualName(e.target.value)}
+                            required
+                            className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                        />
+                        <input
+                            type="number"
+                            placeholder="Duration (minutes)"
+                            value={manualDuration}
+                            onChange={(e) => setManualDuration(e.target.value)}
+                            required
+                            className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                        />
+                        <input
+                            type="number"
+                            placeholder="Quality (1-5)"
+                            value={manualQuality}
+                            onChange={(e) => setManualQuality(e.target.value)}
+                            min="1"
+                            max="5"
+                            className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                        />
+                        <textarea
+                            placeholder="Details (optional)"
+                            value={manualDetails}
+                            onChange={(e) => setManualDetails(e.target.value)}
+                            className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                            rows="3"
+                        ></textarea>
+                        <button type="submit" className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Log Activity
+                        </button>
+                    </form>
+                </div>
+
+                {/* Logged Activities Section */}
+                <div className="mb-8">
+                    <h2 className="text-2xl font-semibold mb-4 text-gray-700">Logged Activities</h2>
+                    {activities.length === 0 ? (
+                        <p className="text-gray-500 italic">No activities logged yet.</p>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
+                            {activities.map((act) => (
+                                <div key={act._id} className="bg-white p-6 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center">
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-xl font-bold text-gray-800">{act.activityName}</h3>
+                                            <p className="text-sm text-gray-500 mt-2">
+                                                Duration: <span className="font-semibold">{act.duration} minutes</span>
+                                            </p>
+                                            {act.quality && (
+                                                <p className="text-sm text-gray-500">Quality: <span className="font-semibold">{act.quality}</span>/5</p>
+                                            )}
+                                            {act.details && (
+                                                <p className="text-sm text-gray-600 mt-2">{act.details}</p>
+                                            )}
+                                            <small className="text-xs text-gray-400 mt-1 block">Logged on: {new Date(act.date).toLocaleDateString()}</small>
+                                        </div>
+                                        <div className="mt-4 lg:mt-0">
+                                            <button onClick={() => handleDeleteActivity(act._id)} className="bg-red-500 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Pop-up for finalizing an activity */}
+            {showPopup && popupData && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50 p-4">
+                    <div className="bg-white p-6 rounded-lg shadow-xl text-center w-full max-w-sm mx-auto">
+                        <h3 className="text-xl font-semibold mb-4 text-gray-800">Finalize {popupData.name}</h3>
+                        <form onSubmit={handlePopupSubmit} className="flex flex-col space-y-4">
+                            <label className="font-medium text-gray-700">
+                                Quality (1-5):
+                                <input
+                                    type="number"
+                                    value={popupQuality}
+                                    onChange={(e) => setPopupQuality(e.target.value)}
+                                    min="1"
+                                    max="5"
+                                    required
+                                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                                />
+                            </label>
+                            <label className="font-medium text-gray-700">
+                                Details:
+                                <textarea
+                                    value={popupDetails}
+                                    onChange={(e) => setPopupDetails(e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                                ></textarea>
+                            </label>
+                            <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                <button type="submit" className="w-full sm:w-auto bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    Save Log
+                                </button>
+                                <button type="button" onClick={handleCancelPopup} className="w-full sm:w-auto bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
 
             {/* Pop-up for confirming deletion */}
             {showDeleteConfirm && (
-                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-5 border border-gray-300 rounded-lg z-50 text-black">
-                    <h3 className="text-lg font-semibold mb-4 text-black">Confirm Deletion</h3>
-                    <p className="mb-4 text-black">Are you sure you want to delete this activity?</p>
-                    <div className="flex gap-2">
-                        <button onClick={confirmDelete} className="bg-red-500 text-white border-none py-2 px-4 rounded-md cursor-pointer">
-                            Delete
-                        </button>
-                        <button onClick={cancelDelete} className="bg-gray-300 text-black border-none py-2 px-4 rounded-md cursor-pointer">
-                            Cancel
-                        </button>
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50 p-4">
+                    <div className="bg-white p-6 rounded-lg shadow-xl text-center w-full max-w-sm mx-auto">
+                        <h3 className="text-xl font-semibold mb-4 text-gray-800">Confirm Deletion</h3>
+                        <p className="mb-6 text-gray-600">Are you sure you want to delete this activity?</p>
+                        <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4">
+                            <button onClick={confirmDelete} className="w-full sm:w-auto bg-red-500 text-white font-semibold py-2 px-6 rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                Delete
+                            </button>
+                            <button onClick={cancelDelete} className="w-full sm:w-auto bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
-
-            {/* List of pending activities to resume or save */}
-            {pausedActivities.length > 0 && (
-                <div className="mb-8">
-                    <h2 className="text-xl font-semibold mb-2">Pending Activities</h2>
-                    <ul>
-                        {pausedActivities.map((act, index) => (
-                            <li key={index} className="mb-2 flex items-center gap-2">
-                                <span>{act.name} - {formatTime(act.duration)}</span>
-                                <button onClick={() => handleStartPause(act.name)} className="bg-green-500 text-white py-1 px-3 rounded-md">Resume</button>
-                                <button onClick={() => handleSavePending(act)} className="bg-blue-500 text-white py-1 px-3 rounded-md">Save</button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {/* Form for manual activity entry */}
-            <div className="mb-8">
-                <h2 className="text-xl font-semibold mb-2">Manual Entry</h2>
-                <form onSubmit={handleManualSubmit} className="flex flex-col gap-4">
-                    <input
-                        type="text"
-                        placeholder="Activity Name"
-                        value={manualName}
-                        onChange={(e) => setManualName(e.target.value)}
-                        required
-                        className="p-2 border border-gray-300 rounded-md"
-                    />
-                    <input
-                        type="number"
-                        placeholder="Duration (minutes)"
-                        value={manualDuration}
-                        onChange={(e) => setManualDuration(e.target.value)}
-                        required
-                        className="p-2 border border-gray-300 rounded-md"
-                    />
-                    <input
-                        type="number"
-                        placeholder="Quality (1-5)"
-                        value={manualQuality}
-                        onChange={(e) => setManualQuality(e.target.value)}
-                        min="1"
-                        max="5"
-                        className="p-2 border border-gray-300 rounded-md"
-                    />
-                    <textarea
-                        placeholder="Details..."
-                        value={manualDetails}
-                        onChange={(e) => setManualDetails(e.target.value)}
-                        className="p-2 border border-gray-300 rounded-md"
-                    ></textarea>
-                    <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded-md">Log Activity</button>
-                </form>
-            </div>
-
-            {/* Display list of all logged activities */}
-            <div>
-                <h2 className="text-xl font-semibold mb-2">Logged Activities</h2>
-                {activities.length === 0 ? (
-                    <p className="text-gray-500">No activities logged yet.</p>
-                ) : (
-                    <ul>
-                        {activities.map((act) => (
-                            <li key={act._id} className="mb-4 p-4 border border-gray-200 rounded-md">
-                                <h3 className="text-lg font-semibold">{act.activityName}</h3>
-                                <p className="text-sm">Duration: <strong className="font-bold">{act.duration} minutes</strong></p>
-                                {act.quality && <p className="text-sm">Quality: {act.quality}/5</p>}
-                                {act.details && <p className="text-sm">Details: {act.details}</p>}
-                                <small className="text-xs text-gray-500">Logged on: {new Date(act.date).toLocaleDateString()}</small>
-                                <button onClick={() => handleDeleteActivity(act._id)} className="ml-2 text-red-500 border border-red-500 bg-transparent rounded-md py-1 px-2">
-                                    Delete
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
         </div>
     );
 }

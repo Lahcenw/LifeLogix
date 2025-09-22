@@ -70,10 +70,16 @@ export default function Login() {
           </button>
         </form>
         {message && (
-          <p className="mt-6 text-center text-sm font-medium">
+          <p className="mt-6 text-center text-sm text-black font-medium">
             {message}
           </p>
         )}
+        <p className="mt-6 text-gray-600 text-sm">
+            You don't have an account?{' '}
+            <a href="/register" className="text-indigo-600 hover:underline font-semibold">
+              Create one
+            </a>
+        </p>
       </div>
     </div>
   );
