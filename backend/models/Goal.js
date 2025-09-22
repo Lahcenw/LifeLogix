@@ -42,5 +42,18 @@ const GoalSchema = new mongoose.Schema({
     },
     subGoals: [subGoalSchema],
 });
+//Progress bar
+GoalSchema.virtual('overallProgress').get(function() {
+    if (!this.subGoals || this.subGoals.length === 0) {
+        return 0;
+    }
 
+    const totalSubGoals = this.subGoals.length;
+    const completedSubGoals = this.subGoals.filter(sub => sub.progress === 100).length;
+
+    return Math.round((completedSubGoals / totalSubGoals) * 100);
+});
+
+GoalSchema.set('toJSON', { virtuals: true });
+GoalSchema.set('toObject', { virtuals: true });
 module.exports = mongoose.model('Goal', GoalSchema);

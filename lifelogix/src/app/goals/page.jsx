@@ -202,9 +202,12 @@ export default function Goals() {
 
             if (res.ok) {
                 const newSubGoal = await res.json();
+                
+                // Update the state with the newly created sub-goal
                 setGoals(goals.map(goal => 
                     goal._id === subGoalParentId ? { ...goal, subGoals: [...(goal.subGoals || []), newSubGoal] } : goal
                 ));
+
                 setMessage('Sub-goal created successfully!');
                 setSubGoalName('');
                 setShowSubGoalForm(false);
@@ -230,17 +233,24 @@ export default function Goals() {
 
             if (res.ok) {
                 const updatedSubGoal = await res.json();
+                
+                // Correctly update the goals state dynamically
                 setGoals(goals.map(goal => {
                     if (goal._id === parentGoalId) {
-                        return {
-                            ...goal,
-                            subGoals: goal.subGoals.map(subGoal =>
-                                subGoal._id === updatedSubGoal._id ? updatedSubGoal : subGoal
-                            )
-                        };
+                        const updatedSubGoals = goal.subGoals.map(subGoal =>
+                            subGoal._id === updatedSubGoal._id ? updatedSubGoal : subGoal
+                        );
+                        
+                        // Recalculate and update overall progress on the frontend
+                        const totalSubGoals = updatedSubGoals.length;
+                        const completedSubGoals = updatedSubGoals.filter(sub => sub.progress === 100).length;
+                        const newOverallProgress = Math.round((completedSubGoals / totalSubGoals) * 100);
+                        
+                        return { ...goal, subGoals: updatedSubGoals, overallProgress: newOverallProgress };
                     }
                     return goal;
                 }));
+                
             } else {
                 setMessage('Failed to update sub-goal status.');
             }
@@ -267,12 +277,17 @@ export default function Goals() {
             });
 
             if (res.ok) {
+                // Update state after successful deletion
                 setGoals(goals.map(goal => {
                     if (goal._id === subGoalToDelete.parentGoalId) {
-                        return {
-                            ...goal,
-                            subGoals: goal.subGoals.filter(subGoal => subGoal._id !== subGoalToDelete.subGoalId),
-                        };
+                        const updatedSubGoals = goal.subGoals.filter(subGoal => subGoal._id !== subGoalToDelete.subGoalId);
+                        
+                        // Recalculate and update overall progress on the frontend
+                        const totalSubGoals = updatedSubGoals.length;
+                        const completedSubGoals = updatedSubGoals.filter(sub => sub.progress === 100).length;
+                        const newOverallProgress = totalSubGoals > 0 ? Math.round((completedSubGoals / totalSubGoals) * 100) : 0;
+                        
+                        return { ...goal, subGoals: updatedSubGoals, overallProgress: newOverallProgress };
                     }
                     return goal;
                 }));
@@ -318,6 +333,7 @@ export default function Goals() {
 
             if (res.ok) {
                 const updatedSubGoal = await res.json();
+                
                 setGoals(goals.map(goal => {
                     if (goal._id === currentSubGoal.parentGoalId) {
                         return {
@@ -352,144 +368,162 @@ export default function Goals() {
     };
 
     return (
-        <div className="p-8 max-w-4xl mx-auto bg-gray-50 min-h-screen">
-            <h1 className="text-4xl font-bold mb-8 text-gray-800 text-center">Your Goals</h1>
-
-            {message && (
-                <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-md mb-6" role="alert">
-                    <span className="block sm:inline">{message}</span>
-                </div>
-            )}
-
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                <h2 className="text-2xl font-semibold mb-4 text-gray-700">{isEditing ? 'Edit Goal' : 'Create a New Goal'}</h2>
-                <form onSubmit={isEditing ? handleUpdateGoal : handleAddGoal} className="flex flex-col space-y-4">
-                    <label htmlFor="goalName" className="font-medium text-gray-700">
-                        Goal Name
-                        <input
-                            id="goalName"
-                            type="text"
-                            placeholder="Enter goal name"
-                            value={goalName}
-                            onChange={(e) => setGoalName(e.target.value)}
-                            required
-                            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                    </label>
-                    <label htmlFor="targetDate" className="font-medium text-gray-700">
-                        Target Date
-                        <input
-                            id="targetDate"
-                            type="date"
-                            value={targetDate}
-                            onChange={(e) => setTargetDate(e.target.value)}
-                            required
-                            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                    </label>
-                    <label htmlFor="goalDescription" className="font-medium text-gray-700">
-                        Description
-                        <textarea
-                            id="goalDescription"
-                            placeholder="Describe your goal (optional)"
-                            value={goalDescription}
-                            onChange={(e) => setGoalDescription(e.target.value)}
-                            className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            rows="3"
-                        ></textarea>
-                    </label>
-                    <button type="submit" className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        {isEditing ? 'Update Goal' : 'Create Goal'}
-                    </button>
-                    {isEditing && (
-                        <button type="button" onClick={() => {
-                            setIsEditing(false);
-                            setCurrentGoal(null);
-                            setGoalName('');
-                            setTargetDate('');
-                            setGoalDescription('');
-                        }} className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Cancel Edit
-                        </button>
-                    )}
-                </form>
-            </div>
-
-            <div className="space-y-4">
-                <h2 className="text-2xl font-semibold mb-4 text-gray-700">Existing Goals</h2>
-                {goals.length === 0 ? (
-                    <p className="text-gray-500 italic text-center">There's no existing goals yet. Create one to get started!</p>
-                ) : (
-                    goals.map((goal) => (
-                        <div key={goal._id} className="bg-white p-6 rounded-lg shadow-md transition-transform transform hover:scale-105">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <h3 className="text-xl font-bold text-gray-800">{goal.goalName}</h3>
-                                    {goal.description && <p className="text-gray-600 mt-2">{goal.description}</p>}
-                                    <p className="text-sm text-gray-500 mt-2">
-                                        Target Date: {new Date(goal.targetDate).toLocaleDateString()}
-                                    </p>
-                                </div>
-                                <div className="flex space-x-2">
-                                    <button onClick={() => handleEditGoal(goal)} className="bg-yellow-500 text-white py-2 px-4 rounded-md shadow-sm hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-                                        Edit
-                                    </button>
-                                    <button onClick={() => handleDeleteGoal(goal._id)} className="bg-red-500 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div className="mt-4 border-t pt-4">
-                                <h4 className="text-lg font-semibold text-gray-700 mb-2">Sub-Goals</h4>
-                                {goal.subGoals && goal.subGoals.length > 0 ? (
-                                    <ul className="space-y-2">
-                                        {goal.subGoals.map(subGoal => (
-                                            <li key={subGoal._id} className="flex justify-between items-center p-2 bg-gray-100 rounded-md">
-                                                <div className="flex items-center">
-                                                    <input 
-                                                        type="checkbox"
-                                                        checked={subGoal.progress === 100}
-                                                        onChange={() => handleToggleSubGoal(subGoal._id, goal._id)}
-                                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-3"
-                                                    />
-                                                    <span className={`text-gray-800 ${subGoal.progress === 100 ? 'line-through text-gray-500' : ''}`}>{subGoal.subGoalName}</span>
-                                                </div>
-                                                <div className="flex space-x-2">
-                                                    <button onClick={() => handleEditSubGoal(subGoal, goal._id)} className="text-sm text-blue-500 hover:text-blue-700">Edit</button>
-                                                    <button onClick={() => handleDeleteSubGoal(subGoal._id, goal._id)} className="text-sm text-red-500 hover:text-red-700">Delete</button>
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p className="text-sm text-gray-500 italic">No sub-goals yet. Add one below!</p>
-                                )}
-
-                                <button 
-                                    onClick={() => {
-                                        setSubGoalParentId(goal._id);
-                                        setShowSubGoalForm(true);
-                                        setSubGoalName('');
-                                        setIsEditingSubGoal(false);
-                                    }} 
-                                    className="mt-4 text-sm text-indigo-600 hover:text-indigo-800"
-                                >
-                                    + Add Sub-Goal
-                                </button>
-                            </div>
-                        </div>
-                    ))
+        <div className="flex flex-col md:flex-row md:space-x-8 p-4 md:p-8 w-full bg-gray-50 min-h-screen">
+            
+            {/* GOALS LIST & MESSAGE */}
+            <div className="w-full md:w-2/3">
+                <h1 className="text-4xl font-bold mb-8 text-gray-800 text-center md:text-left">Your Goals</h1>
+                {message && (
+                    <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-md mb-6" role="alert">
+                        <span className="block sm:inline">{message}</span>
+                    </div>
                 )}
-            </div>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
+                    {goals.length === 0 ? (
+                        <p className="text-gray-500 italic text-center md:col-span-2">There's no existing goals yet. Create one to get started!</p>
+                    ) : (
+                        goals.map((goal) => (
+                            <div key={goal._id} className="bg-white p-6 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center">
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-xl font-bold text-gray-800">{goal.goalName}</h3>
+                                        {goal.description && <p className="text-gray-600 mt-2 text-sm">{goal.description}</p>}
+                                        <p className="text-sm text-gray-500 mt-2">
+                                            Target Date: {new Date(goal.targetDate).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <div className="flex space-x-2 mt-4 lg:mt-0 flex-shrink-0">
+                                        <button onClick={() => handleEditGoal(goal)} className="bg-yellow-500 text-white py-2 px-4 rounded-md shadow-sm hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                                            Edit
+                                        </button>
+                                        <button onClick={() => handleDeleteGoal(goal._id)} className="bg-red-500 text-white py-2 px-4 rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {/* Progress Bar Display */}
+                                <div className="mt-4">
+                                    <h4 className="text-md font-semibold text-gray-700">Overall Progress</h4>
+                                    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                                        <div 
+                                            className="bg-indigo-600 h-2.5 rounded-full" 
+                                            style={{ width: `${goal.overallProgress || 0}%` }}
+                                        ></div>
+                                    </div>
+                                    <p className="text-sm text-gray-500 mt-1">{goal.overallProgress || 0}% Complete</p>
+                                </div>
+                                
+                                <div className="mt-4 border-t pt-4">
+                                    <h4 className="text-lg font-semibold text-gray-700 mb-2">Sub-Goals</h4>
+                                    {goal.subGoals && goal.subGoals.length > 0 ? (
+                                        <ul className="space-y-2">
+                                            {goal.subGoals.map(subGoal => (
+                                                <li key={subGoal._id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 bg-gray-100 rounded-md">
+                                                    <div className="flex items-center">
+                                                        <input 
+                                                            type="checkbox"
+                                                            checked={subGoal.progress === 100}
+                                                            onChange={() => handleToggleSubGoal(subGoal._id, goal._id)}
+                                                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-3"
+                                                        />
+                                                        <span className={`text-gray-800 ${subGoal.progress === 100 ? 'line-through text-gray-500' : ''}`}>{subGoal.subGoalName}</span>
+                                                    </div>
+                                                    <div className="flex space-x-2 mt-2 sm:mt-0">
+                                                        <button onClick={() => handleEditSubGoal(subGoal, goal._id)} className="text-sm text-blue-500 hover:text-blue-700">Edit</button>
+                                                        <button onClick={() => handleDeleteSubGoal(subGoal._id, goal._id)} className="text-sm text-red-500 hover:text-red-700">Delete</button>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-sm text-gray-500 italic">No sub-goals yet. Add one below!</p>
+                                    )}
 
+                                    <button 
+                                        onClick={() => {
+                                            setSubGoalParentId(goal._id);
+                                            setShowSubGoalForm(true);
+                                            setSubGoalName('');
+                                            setIsEditingSubGoal(false);
+                                        }} 
+                                        className="mt-4 text-sm text-indigo-600 hover:text-indigo-800"
+                                    >
+                                        + Add Sub-Goal
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+            
+            {/* GOAL CREATION FORM */}
+            <div className="w-full md:w-1/3 mt-8 md:mt-0">
+                <div className="bg-white p-6 rounded-lg shadow-md md:sticky md:top-8">
+                    <h2 className="text-2xl font-semibold mb-4 text-gray-700">{isEditing ? 'Edit Goal' : 'Create a New Goal'}</h2>
+                    <form onSubmit={isEditing ? handleUpdateGoal : handleAddGoal} className="flex flex-col space-y-4">
+                        <label htmlFor="goalName" className="font-medium text-gray-700">
+                            Goal Name
+                            <input
+                                id="goalName"
+                                type="text"
+                                placeholder="Enter goal name"
+                                value={goalName}
+                                onChange={(e) => setGoalName(e.target.value)}
+                                required
+                                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        </label>
+                        <label htmlFor="targetDate" className="font-medium text-gray-700">
+                            Target Date
+                            <input
+                                id="targetDate"
+                                type="date"
+                                value={targetDate}
+                                onChange={(e) => setTargetDate(e.target.value)}
+                                required
+                                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        </label>
+                        <label htmlFor="goalDescription" className="font-medium text-gray-700">
+                            Description
+                            <textarea
+                                id="goalDescription"
+                                placeholder="Describe your goal (optional)"
+                                value={goalDescription}
+                                onChange={(e) => setGoalDescription(e.target.value)}
+                                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                rows="3"
+                            ></textarea>
+                        </label>
+                        <button type="submit" className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            {isEditing ? 'Update Goal' : 'Create Goal'}
+                        </button>
+                        {isEditing && (
+                            <button type="button" onClick={() => {
+                                setIsEditing(false);
+                                setCurrentGoal(null);
+                                setGoalName('');
+                                setTargetDate('');
+                                setGoalDescription('');
+                            }} className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Cancel Edit
+                            </button>
+                        )}
+                    </form>
+                </div>
+            </div>
+            
+            {/* MODALS */}
+            
             {/* Main Goal Delete Confirmation Pop-up */}
             {showDeleteConfirm && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm mx-auto">
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50 p-4">
+                    <div className="bg-white p-6 rounded-lg shadow-xl text-center w-full max-w-sm mx-auto">
                         <h3 className="text-xl font-semibold mb-4 text-gray-800">Confirm Deletion</h3>
                         <p className="mb-6 text-gray-600">Are you sure you want to delete this goal? This action cannot be undone.</p>
-                        <div className="flex justify-center space-x-4">
+                        <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4">
                             <button onClick={confirmDelete} className="bg-red-500 text-white font-semibold py-2 px-6 rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                                 Delete
                             </button>
@@ -503,8 +537,8 @@ export default function Goals() {
             
             {/* Sub-Goal Form Pop-up */}
             {showSubGoalForm && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm mx-auto">
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50 p-4">
+                    <div className="bg-white p-6 rounded-lg shadow-xl text-center w-full max-w-sm mx-auto">
                         <h3 className="text-xl font-semibold mb-4 text-gray-800">{isEditingSubGoal ? 'Edit Sub-Goal' : 'Add New Sub-Goal'}</h3>
                         <form onSubmit={isEditingSubGoal ? handleUpdateSubGoal : handleAddSubGoal} className="flex flex-col space-y-4">
                             <input
@@ -513,9 +547,9 @@ export default function Goals() {
                                 value={subGoalName}
                                 onChange={(e) => setSubGoalName(e.target.value)}
                                 required
-                                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 placeholder-black text-black"
+                                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 placeholder-grey text-black"
                             />
-                            <div className="flex justify-center space-x-4">
+                            <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4">
                                 <button type="submit" className="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     {isEditingSubGoal ? 'Update' : 'Add'}
                                 </button>
@@ -530,11 +564,11 @@ export default function Goals() {
 
             {/* Sub-Goal Delete Confirmation Pop-up */}
             {showSubGoalDeleteConfirm && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm mx-auto">
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50 p-4">
+                    <div className="bg-white p-6 rounded-lg shadow-xl text-center w-full max-w-sm mx-auto">
                         <h3 className="text-xl font-semibold mb-4 text-gray-800">Confirm Deletion</h3>
                         <p className="mb-6 text-gray-600">Are you sure you want to delete this sub-goal? This action cannot be undone.</p>
-                        <div className="flex justify-center space-x-4">
+                        <div className="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4">
                             <button onClick={confirmDeleteSubGoal} className="bg-red-500 text-white font-semibold py-2 px-6 rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                                 Delete
                             </button>
