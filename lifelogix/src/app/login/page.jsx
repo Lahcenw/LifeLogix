@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +19,6 @@ export default function Login() {
       },
       body: JSON.stringify({ username, password }),
     });
-
     const data = await res.json();
 
     if (res.ok) {
@@ -25,6 +26,7 @@ export default function Login() {
       localStorage.setItem('token', data.token);
       setMessage("Login successful!");
       console.log('Received token:', data.token);
+      router.push('/dashboard');
     } else {
       // Login failed
       setMessage(data.msg || "Invalid Credentials");

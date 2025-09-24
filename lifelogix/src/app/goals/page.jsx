@@ -372,7 +372,7 @@ export default function Goals() {
             
             {/* GOALS LIST & MESSAGE */}
             <div className="w-full md:w-2/3">
-                <h1 className="text-4xl font-bold mb-8 text-gray-800 text-center md:text-left">Your Goals</h1>
+                <h1 className="text-4xl font-bold mb-8 text-gray-800 text-center md:text-left">My Goals</h1>
                 {message && (
                     <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-md mb-6" role="alert">
                         <span className="block sm:inline">{message}</span>
