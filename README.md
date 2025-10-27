@@ -2,7 +2,7 @@
 
 Follow these steps to get a copy of LifeLogix running on your local machine for development and testing.
 
- I. Prerequisites and System Tools
+## I. Prerequisites and System Tools
 
 Ensure you have the following essential software installed and configured on your computer:
 
