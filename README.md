@@ -52,7 +52,7 @@ This project requires a running MongoDB instance.
     https://drive.google.com/drive/folders/1OnfqDCy48TpvVGpkEygCE0SvTmjltkhG?usp=drive_link
 
 
- IV. Run the Application
+## IV. Run the Application
 
 You will need two separate terminal windows for the server and the client.
 
