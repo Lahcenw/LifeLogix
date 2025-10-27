@@ -1,4 +1,4 @@
-⬇️ Installation and Local Setup
+## ⬇️ Installation and Local Setup
 
 Follow these steps to get a copy of LifeLogix running on your local machine for development and testing.
 
