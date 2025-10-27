@@ -1,3 +1,19 @@
+### LifeLogix: The Digital Ecosystem for Focused Living 🚀
+
+LifeLogix is a unified web application designed to significantly enhance personal productivity and self-awareness for students and professionals. It tackles the inefficiency of using multiple, fragmented tools by seamlessly integrating three critical personal management functions: Goal Management, Activity Tracking (with quality metrics), and Reflective Journaling.
+
+The core concept of LifeLogix is to establish a self-optimizing feedback loop that directly correlates a user's logged daily effort with their long-term goal progress, fostering consistency and driving continuous self-improvement.
+
+## 🛠️ Technical Stack Overview
+
+This is a full-stack application built using the following technologies:
+
+    Frontend: Next.js (React) for a responsive, modern client interface.
+
+    Backend: Node.js with Express.js for a robust RESTful API.
+
+    Database: MongoDB (NoSQL) for flexible data persistence.
+
 ## ⬇️ Installation and Local Setup
 
 Follow these steps to get a copy of LifeLogix running on your local machine for development and testing.
