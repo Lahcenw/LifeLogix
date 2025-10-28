@@ -1,0 +1,2 @@
+this file is required for iniztializing the database, after installing MongoDB Compass, this file should be imported there so lifelogix can be connected,
+before connecting the database remember to run mongod.exe, if there's no such file, please install MongodDB Server Community, then you'll find this file in the following path: ../Program File/MongoDB/Server/[current version]/bin/
